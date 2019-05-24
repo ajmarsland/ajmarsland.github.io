@@ -1,0 +1,87 @@
+<!DOCTYPE HTML>
+<!--
+	Multiverse by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Multiverse by HTML5 UP</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+		<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/rxjs/6.4.0/rxjs.umd.min.js"></script>
+		<script type="text/javascript" src="https://unpkg.com/kentico-cloud-delivery@latest/_bundles/kentico-cloud-delivery-sdk.browser.umd.min.js"></script>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header">
+						<h1><a href="index.html"><strong>Multiverse</strong> by HTML5 UP</a></h1>
+						<nav>
+							<ul>
+								<li><a href="#footer" class="icon fa-info-circle">About</a></li>
+							</ul>
+						</nav>
+					</header>
+
+				<!-- Main -->
+				<image-list :images="this.images"></image-list>
+
+				<!-- Footer -->
+					<footer id="footer" class="panel">
+						<div class="inner split">
+							<div>
+								<about-section :data="aboutData"></about-section>
+								<section>
+									<h2>Follow me on ...</h2>
+									<contact-list :data="contactData"></contact-list>
+								</section>
+								<p class="copyright">
+									&copy; Untitled. Design: <a href="http://html5up.net">HTML5 UP</a>.
+								</p>
+							</div>
+							<div>
+								<!--<section>
+									<h2>Get in touch</h2>
+									<form method="post" action="#">
+										<div class="fields">
+											<div class="field half">
+												<input type="text" name="name" id="name" placeholder="Name" />
+											</div>
+											<div class="field half">
+												<input type="text" name="email" id="email" placeholder="Email" />
+											</div>
+											<div class="field">
+												<textarea name="message" id="message" rows="4" placeholder="Message"></textarea>
+											</div>
+										</div>
+										<ul class="actions">
+											<li><input type="submit" value="Send" class="primary" /></li>
+											<li><input type="reset" value="Reset" /></li>
+										</ul>
+									</form>
+								</section>-->
+							</div>
+						</div>
+					</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.poptrox.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+			
+			<script src="assets/js/kenticocloud.js"></script>
+
+	</body>
+</html>
