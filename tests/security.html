@@ -1,0 +1,56 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Security regression checks</title>
+<h1>Security regression checks</h1>
+<pre id="results">Running…</pre>
+<div id="panel"></div><div id="target"></div>
+<script src="../assets/js/jquery.min.js"></script>
+<script src="../assets/js/util.js"></script>
+<script>
+(function () {
+  var results = [], failed = 0;
+  function check(name, test) {
+    try { test(); results.push('PASS ' + name); }
+    catch (error) { failed++; results.push('FAIL ' + name + ': ' + error.message); }
+  }
+  function assert(value, message) { if (!value) throw new Error(message); }
+  check('jQuery upgraded to 3.7.1', function () {
+    assert(jQuery.fn.jquery === '3.7.1', 'Unexpected jQuery version');
+  });
+  check('jQuery does not restore the vulnerable HTML prefilter', function () {
+    var html = '<style/><img src=x onerror=window.securityProbe=1>';
+    assert(jQuery.htmlPrefilter(html) === html, 'HTML rewritten by legacy prefilter');
+  });
+  check('panel accepts CSS selectors', function () {
+    var panel = jQuery('#panel').panel({target: '#target', visibleClass: 'probe-selector'});
+    jQuery('#target').addClass('probe-selector');
+    panel._hide();
+    assert(!jQuery('#target').hasClass('probe-selector'), 'Selector target not toggled');
+  });
+  check('panel accepts existing jQuery objects', function () {
+    var panel = jQuery('#panel').panel({target: jQuery('#target'), visibleClass: 'probe-object'});
+    jQuery('#target').addClass('probe-object');
+    panel._hide();
+    assert(!jQuery('#target').hasClass('probe-object'), 'jQuery target not toggled');
+  });
+  check('panel accepts DOM elements', function () {
+    var panel = jQuery('#panel').panel({target: document.getElementById('target'), visibleClass: 'probe-dom'});
+    jQuery('#target').addClass('probe-dom');
+    panel._hide();
+    assert(!jQuery('#target').hasClass('probe-dom'), 'DOM target not toggled');
+  });
+  check('panel rejects HTML instead of constructing executable elements', function () {
+    window.securityProbe = 0;
+    var rejected = false;
+    try {
+      jQuery('#panel').panel({target: '<img src=x onerror="window.securityProbe=1">'});
+    } catch (error) { rejected = true; }
+    assert(rejected, 'HTML should be rejected as an invalid selector');
+    assert(!document.querySelector('img'), 'Unexpected image was constructed');
+    assert(window.securityProbe === 0, 'Payload executed');
+  });
+  document.getElementById('results').textContent = results.join('\n') + '\n' +
+    (failed ? failed + ' checks failed' : 'All 6 checks passed');
+  document.title = failed ? 'FAIL Security checks' : 'PASS Security checks';
+}());
+</script>
