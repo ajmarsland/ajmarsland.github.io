@@ -1,2 +1,8 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Keep vendored script checksums stable on Windows and Unix checkouts.
+assets/js/jquery.min.js text eol=lf
+assets/js/vue-2.7.16.min.js text eol=lf
+assets/js/rxjs-6.4.0.umd.min.js text eol=lf
+assets/js/kentico-cloud-delivery-5.7.2.min.js text eol=lf
