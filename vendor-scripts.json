@@ -1,0 +1,26 @@
+[
+  {
+    "sha256": "fc9a93dd241f6b045cbff0481cf4e1901becd0e12fb45166a8f17f95823f0b1a",
+    "version": "3.7.1",
+    "source": "https://code.jquery.com/jquery-3.7.1.min.js",
+    "file": "assets/js/jquery.min.js"
+  },
+  {
+    "sha256": "3c1d4b0c549e8de9d4a9bafb12ab70b6a1ac747d07293b98c5b25b6632999afd",
+    "version": "2.7.16",
+    "source": "https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.min.js",
+    "file": "assets/js/vue-2.7.16.min.js"
+  },
+  {
+    "sha256": "588ae026618e064a51fb863e16d835b4c42782684ec7f639d13889d39ceed78f",
+    "version": "6.4.0",
+    "source": "https://cdnjs.cloudflare.com/ajax/libs/rxjs/6.4.0/rxjs.umd.min.js",
+    "file": "assets/js/rxjs-6.4.0.umd.min.js"
+  },
+  {
+    "sha256": "c9873ff447780d0734f761948d3760c1cb15574d0c780c7e5aff33d0e1a32b6e",
+    "version": "5.7.2",
+    "source": "https://unpkg.com/kentico-cloud-delivery@5.7.2/_bundles/kentico-cloud-delivery-sdk.browser.umd.min.js",
+    "file": "assets/js/kentico-cloud-delivery-5.7.2.min.js"
+  }
+]
