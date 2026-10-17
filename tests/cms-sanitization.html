@@ -3,11 +3,12 @@
 <title>CMS sanitization regression checks</title>
 <h1>CMS sanitization regression checks</h1>
 <pre id="results">Running...</pre>
-<div id="fixture"><image-list :images="images"></image-list><about-section :data="about"></about-section></div>
-<script src="../assets/js/vue-2.7.16.min.js"></script>
+<div id="fixture"><div id="gallery-fixture"></div><section id="about-fixture"></section><ul id="contacts-fixture"></ul></div>
+
 <script src="../assets/js/dompurify-3.4.17.min.js"></script>
 <script src="../assets/js/cms-html.js"></script>
 <script src="../assets/js/cms-components.js"></script>
+<script src="../assets/js/kenticocloud.js"></script>
 <script>
 (async function () {
     var results = [], failed = 0;
@@ -71,31 +72,102 @@
     });
     window.cmsProbe = 0;
     var dirty = '<p onclick="window.cmsProbe=1"><strong>Preserved text</strong><a href="javascript:window.cmsProbe=1">Link</a></p><svg onload="window.cmsProbe=1"></svg>';
-    var vm = new Vue({
-        el: '#fixture',
-        data: {
-            images: [{url: 'pixel.svg', title: '<img onerror=bad>', text: dirty}],
-            about: {title: 'About', text: dirty}
-        }
-    });
-    await Vue.nextTick();
-    check('real gallery component sanitizes its HTML sink', function () {
-        var article = vm.$el.querySelector('article');
+    var fixture = document.getElementById('fixture');
+    var gallery = document.getElementById('gallery-fixture');
+    var about = document.getElementById('about-fixture');
+    var contacts = document.getElementById('contacts-fixture');
+    var safePhoto = 'https://assets-au-01.kc-usercontent.com/7f679bd8-e07a-0226-14fb-5b69be6ad46e/test/photo.jpg';
+    CmsView.renderImages(gallery, [{url: safePhoto, title: '<img onerror=bad>', text: dirty}]);
+    CmsView.renderAbout(about, {title: 'About', text: dirty});
+    check('real gallery renderer sanitizes its HTML sink', function () {
+        var article = fixture.querySelector('article');
         assert(article.querySelector('strong').textContent === 'Preserved text', 'Lost caption');
         assert(!article.querySelector('[onclick],svg,a[href^="javascript"]'), 'Unsafe caption');
         assert(article.querySelector('h2').textContent === '<img onerror=bad>', 'Title not escaped as text');
     });
-    check('real About component sanitizes its HTML sink', function () {
-        var section = vm.$el.querySelector('section');
+    check('real About renderer sanitizes its HTML sink', function () {
+        var section = fixture.querySelector('section');
         assert(section.querySelector('strong').textContent === 'Preserved text', 'Lost About content');
         assert(!section.querySelector('[onclick],svg,a[href]'), 'Unsafe About markup');
     });
     check('rendered content cannot execute injected handlers', function () {
-        vm.$el.querySelector('section p').click();
+        fixture.querySelector('section p').click();
         assert(window.cmsProbe === 0, 'Payload executed');
     });
+    check('photo URLs require HTTPS and this CMS environment', function () {
+        assert(CmsView.photoUrl(safePhoto) === safePhoto, 'Safe photo rejected');
+        ['javascript:alert(1)', 'data:image/svg+xml,bad', '//evil.example/photo.jpg',
+            safePhoto.replace('https:', 'http:'), safePhoto.replace('kc-usercontent.com', 'kc-usercontent.com.evil.example'),
+            safePhoto.replace('/7f679bd8-e07a-0226-14fb-5b69be6ad46e/', '/other-project/'),
+            safePhoto.replace('https://', 'https://user:pass@'), safePhoto.replace('.com/', '.com:444/')].forEach(function (url) {
+                assert(CmsView.photoUrl(url) === '', 'Unsafe photo accepted: ' + url);
+            });
+    });
+    check('unsafe or missing photos are omitted without corrupting valid entries', function () {
+        CmsView.renderImages(gallery, [null, {}, {url: 'javascript:bad'}, {url: safePhoto, title: 'Safe'}]);
+        assert(gallery.querySelectorAll('article').length === 1, 'Unsafe entries rendered');
+        assert(gallery.querySelector('img').src.endsWith('?w=360'), 'Thumbnail size missing');
+    });
+    check('social URLs stay on fixed hosts and reject path/URL injection', function () {
+        assert(CmsView.socialUrl('github', 'ajmarsland') === 'https://github.com/ajmarsland', 'Safe profile lost');
+        ['https://evil.example', '//evil.example', 'x/../y', '..', '.', 'user?x=y', 'user#x', 'user@evil', '<img>', null].forEach(function (value) {
+            assert(CmsView.socialUrl('linkedin', value) === '', 'Unsafe profile accepted');
+        });
+        assert(CmsView.socialUrl('__proto__', 'x') === '', 'Unknown network accepted');
+    });
+    check('LinkedIn uses its own CMS field and empty networks are hidden', function () {
+        CmsView.renderContacts(contacts, {linkedin: 'ajmarsland', facebook: ''});
+        assert(contacts.querySelectorAll('a').length === 1, 'Unexpected links');
+        assert(contacts.querySelector('a').href === 'https://www.linkedin.com/in/ajmarsland', 'LinkedIn uses wrong field');
+    });
+    function response(items, linked) { return {ok: true, json: async function () { return {items: items, modular_content: linked || {}}; }}; }
+    var home = {elements: {photos: {value: ['second', 'first', 'missing']}}};
+    var linked = {
+        first: {elements: {image: {value: [{url: safePhoto}]}, title: {value: 'First'}, text: {value: '<p>First</p>'}}},
+        second: {elements: {image: {value: [{url: safePhoto}]}, title: {value: 'Second'}, text: {value: '<p>Second</p>'}}}
+    };
+    check('raw Delivery API mapping preserves editorial photo order', function () {
+        var mapped = CmsData.images({items: [home], modular_content: linked});
+        assert(mapped[0].title === 'Second' && mapped[1].title === 'First', 'Photo order changed');
+        assert(mapped[2].url === '', 'Missing linked item not handled');
+    });
+    var initialized = 0, requests = [];
+    await CmsData.load({gallery: gallery, about: about, contacts: contacts, initialize: function () { initialized++; },
+        fetcher: async function (url, options) {
+            requests.push(new URL(url));
+            assert(options.credentials === 'omit' && options.signal, 'Request controls missing');
+            var type = new URL(url).searchParams.get('system.type');
+            if (type === 'home_page') return response([home], linked);
+            if (type === 'about_page') return response([{elements: {title: {value: 'About Brno'}, text: {value: dirty}}}]);
+            return response([{elements: {linkedin: {value: 'ajmarsland'}}}]);
+        }});
+    check('loader renders all sections and initializes gallery once', function () {
+        assert(initialized === 1 && requests.length === 3, 'Unexpected request/initialization count');
+        assert(requests.every(function (url) { return url.origin === 'https://deliver.kontent.ai'; }), 'Unexpected endpoint');
+        assert(gallery.querySelectorAll('article').length === 2, 'Missing valid photos');
+        assert(about.querySelector('h2').textContent === 'About Brno', 'Missing About');
+        assert(!about.querySelector('[onclick],svg'), 'Unsafe loader markup');
+        assert(contacts.querySelector('a').href === 'https://www.linkedin.com/in/ajmarsland', 'Missing profile');
+    });
+    await CmsData.load({gallery: gallery, about: about, contacts: contacts, initialize: function () { initialized++; },
+        fetcher: async function (url) {
+            if (new URL(url).searchParams.get('system.type') === 'home_page') throw new Error('Offline');
+            if (new URL(url).searchParams.get('system.type') === 'about_page') return response([{elements: {title: {value: 'Still available'}}}]);
+            return {ok: false};
+        }});
+    check('failed gallery request leaves About available and initializes panels', function () {
+        assert(gallery.querySelector('[role=status]'), 'Missing gallery error');
+        assert(about.querySelector('h2').textContent === 'Still available', 'Independent section failed');
+        assert(!contacts.querySelector('a') && initialized === 2, 'Failure handling incomplete');
+    });
+    await CmsData.load({gallery: gallery, about: about, contacts: contacts, initialize: function () { initialized++; },
+        fetcher: async function () { return response([]); }});
+    check('empty CMS responses fail safely with readable status', function () {
+        assert(gallery.querySelector('[role=status]') && about.querySelector('[role=status]'), 'Missing empty-content notice');
+        assert(initialized === 3 && !contacts.querySelector('a'), 'UI not initialized after empty response');
+    });
     document.getElementById('results').textContent = results.join('\n') + '\n' +
-        (failed ? failed + ' checks failed' : 'All 12 checks passed');
+        (failed ? failed + ' checks failed' : 'All ' + results.length + ' checks passed');
     document.title = failed ? 'FAIL CMS checks' : 'PASS CMS checks';
 }());
 </script>
