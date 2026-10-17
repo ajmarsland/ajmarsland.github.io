@@ -22,5 +22,11 @@
     "version": "5.7.2",
     "source": "https://unpkg.com/kentico-cloud-delivery@5.7.2/_bundles/kentico-cloud-delivery-sdk.browser.umd.min.js",
     "file": "assets/js/kentico-cloud-delivery-5.7.2.min.js"
+  },
+  {
+    "file": "assets/js/dompurify-3.4.17.min.js",
+    "version": "3.4.17",
+    "source": "https://cdn.jsdelivr.net/npm/dompurify@3.4.17/dist/purify.min.js",
+    "sha256": "cd37898f9782adf54820c413191b5691803f0f137c799d6edcfd38523b4c2c31"
   }
 ]

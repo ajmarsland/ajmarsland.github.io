@@ -1,0 +1,101 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>CMS sanitization regression checks</title>
+<h1>CMS sanitization regression checks</h1>
+<pre id="results">Running...</pre>
+<div id="fixture"><image-list :images="images"></image-list><about-section :data="about"></about-section></div>
+<script src="../assets/js/vue-2.7.16.min.js"></script>
+<script src="../assets/js/dompurify-3.4.17.min.js"></script>
+<script src="../assets/js/cms-html.js"></script>
+<script src="../assets/js/cms-components.js"></script>
+<script>
+(async function () {
+    var results = [], failed = 0;
+    function assert(value, message) { if (!value) throw new Error(message); }
+    function check(name, test) {
+        try { test(); results.push('PASS ' + name); }
+        catch (error) { failed++; results.push('FAIL ' + name + ': ' + error.message); }
+    }
+    function cleanNode(html) {
+        var node = document.createElement('div');
+        node.innerHTML = CmsHtml.sanitize(html);
+        return node;
+    }
+    check('safe formatting, lists and HTTPS links survive', function () {
+        var node = cleanNode('<h2>About</h2><p>A <strong>photo</strong><br><em>caption</em></p><ul><li>Brno</li></ul><a href="https://example.com/" title="Visit">Visit</a>');
+        assert(node.querySelector('strong').textContent === 'photo', 'Lost emphasis');
+        assert(node.querySelector('li').textContent === 'Brno', 'Lost list');
+        assert(node.querySelector('a').href === 'https://example.com/', 'Lost safe link');
+    });
+    check('scripts and inline handlers are removed', function () {
+        var node = cleanNode('<scr' + 'ipt>window.cmsProbe=1</scr' + 'ipt><p onclick="window.cmsProbe=1">Text</p><img onerror="window.cmsProbe=1" alt="Photo">');
+        assert(!node.querySelector('script,[onclick],[onerror]'), 'Executable markup remains');
+        assert(node.textContent === 'Text', 'Safe text changed');
+    });
+    check('encoded and whitespace-obfuscated JavaScript links are removed', function () {
+        var node = cleanNode('<a href="javascript:alert(1)">A</a><a href="jav&#x61;script:alert(1)">B</a><a href="java&#10;script:alert(1)">C</a>');
+        assert(node.querySelectorAll('a').length === 3, 'Lost link text');
+        assert(!node.querySelector('[href]'), 'Dangerous URL remains');
+    });
+    check('SVG and MathML namespaces are excluded', function () {
+        var node = cleanNode('<svg><a xlink:href="javascript:alert(1)">SVG</a></svg><math><mtext>Math</mtext></math><p>Safe</p>');
+        assert(!node.querySelector('svg,math'), 'Foreign namespace remains');
+        assert(node.querySelector('p').textContent === 'Safe', 'Lost safe content');
+    });
+    check('frames, embedded objects, forms and template content are excluded', function () {
+        var node = cleanNode('<iframe srcdoc="bad"></iframe><object data="bad"></object><form><input name="x"></form><template><img onerror="bad"></template><p>Safe</p>');
+        assert(!node.querySelector('iframe,object,form,input,template'), 'Active content remains');
+    });
+    check('styles and DOM-clobbering attributes are excluded', function () {
+        var node = cleanNode('<p id="wrapper" name="app" class="panel" style="position:fixed" data-x="x">Safe</p>');
+        assert(node.querySelector('p').attributes.length === 0, 'Unapproved attributes remain');
+    });
+    check('missing or non-string CMS fields return empty HTML', function () {
+        [null, undefined, 123, {}, []].forEach(function (value) {
+            assert(CmsHtml.sanitize(value) === '', 'Non-string accepted');
+        });
+    });
+    check('missing sanitizer fails closed', function () {
+        var saved = window.DOMPurify;
+        try {
+            window.DOMPurify = undefined;
+            assert(CmsHtml.sanitize('<p>Unsafe fallback</p>') === '', 'Raw fallback returned');
+        } finally { window.DOMPurify = saved; }
+    });
+    check('unsupported browser fails closed', function () {
+        var saved = window.DOMPurify;
+        try {
+            window.DOMPurify = {isSupported: false, sanitize: function () { throw new Error('Must not call'); }};
+            assert(CmsHtml.sanitize('<p>Unsafe fallback</p>') === '', 'Raw fallback returned');
+        } finally { window.DOMPurify = saved; }
+    });
+    window.cmsProbe = 0;
+    var dirty = '<p onclick="window.cmsProbe=1"><strong>Preserved text</strong><a href="javascript:window.cmsProbe=1">Link</a></p><svg onload="window.cmsProbe=1"></svg>';
+    var vm = new Vue({
+        el: '#fixture',
+        data: {
+            images: [{url: 'pixel.svg', title: '<img onerror=bad>', text: dirty}],
+            about: {title: 'About', text: dirty}
+        }
+    });
+    await Vue.nextTick();
+    check('real gallery component sanitizes its HTML sink', function () {
+        var article = vm.$el.querySelector('article');
+        assert(article.querySelector('strong').textContent === 'Preserved text', 'Lost caption');
+        assert(!article.querySelector('[onclick],svg,a[href^="javascript"]'), 'Unsafe caption');
+        assert(article.querySelector('h2').textContent === '<img onerror=bad>', 'Title not escaped as text');
+    });
+    check('real About component sanitizes its HTML sink', function () {
+        var section = vm.$el.querySelector('section');
+        assert(section.querySelector('strong').textContent === 'Preserved text', 'Lost About content');
+        assert(!section.querySelector('[onclick],svg,a[href]'), 'Unsafe About markup');
+    });
+    check('rendered content cannot execute injected handlers', function () {
+        vm.$el.querySelector('section p').click();
+        assert(window.cmsProbe === 0, 'Payload executed');
+    });
+    document.getElementById('results').textContent = results.join('\n') + '\n' +
+        (failed ? failed + ' checks failed' : 'All 12 checks passed');
+    document.title = failed ? 'FAIL CMS checks' : 'PASS CMS checks';
+}());
+</script>
