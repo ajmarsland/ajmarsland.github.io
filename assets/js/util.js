@@ -98,7 +98,7 @@
 				if (typeof config.target === 'string')
 					config.target = $(document).find(config.target);
 				else if (!(config.target instanceof $))
-					config.target = $(config.target);
+					config.target = $([config.target]);
 
 		// Panel.
 

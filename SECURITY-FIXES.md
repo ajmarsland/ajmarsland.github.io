@@ -10,6 +10,6 @@ The runtime no longer downloads executable JavaScript from third-party CDNs. CMS
 
 ## Verification
 
-Serve the repository with a static HTTP server, then open `/tests/security.html` for six regression checks covering the patched jQuery behavior, selector/jQuery/DOM target compatibility, and an HTML-injection probe. Also verify `/` with the real CMS: gallery thumbnails, opening and closing a lightbox, About panel, and mobile layout. GitHub CodeQL and Dependabot should be checked on the pull request before merging.
+Serve the repository with a static HTTP server, then open `/tests/security.html` for seven regression checks covering CVE-2019-11358 prototype pollution, the patched HTML prefilter, selector/jQuery/DOM target compatibility, and an HTML-injection probe. Also verify `/` with the real CMS: gallery thumbnails, opening and closing a lightbox, About panel, and mobile layout. Check the full post-merge master scan as well as PR checks: a passing "no new alerts" check does not prove pre-existing alerts are fixed.
 
 The production branch and GitHub Pages deployment are not changed until this branch is merged.

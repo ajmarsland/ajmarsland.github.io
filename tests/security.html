@@ -17,6 +17,12 @@
   check('jQuery upgraded to 3.7.1', function () {
     assert(jQuery.fn.jquery === '3.7.1', 'Unexpected jQuery version');
   });
+  check('deep extend blocks the prototype pollution from CVE-2019-11358', function () {
+    var input = JSON.parse('{"__proto__":{"securityPollutionProbe":true}}');
+    var result = jQuery.extend(true, {}, input);
+    assert(result.securityPollutionProbe === undefined, 'Result inherited injected data');
+    assert(({}).securityPollutionProbe === undefined, 'Object prototype was polluted');
+  });
   check('jQuery does not restore the vulnerable HTML prefilter', function () {
     var html = '<style/><img src=x onerror=window.securityProbe=1>';
     assert(jQuery.htmlPrefilter(html) === html, 'HTML rewritten by legacy prefilter');
@@ -50,7 +56,7 @@
     assert(window.securityProbe === 0, 'Payload executed');
   });
   document.getElementById('results').textContent = results.join('\n') + '\n' +
-    (failed ? failed + ' checks failed' : 'All 6 checks passed');
+    (failed ? failed + ' checks failed' : 'All 7 checks passed');
   document.title = failed ? 'FAIL Security checks' : 'PASS Security checks';
 }());
 </script>
