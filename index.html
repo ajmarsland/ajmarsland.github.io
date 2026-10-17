@@ -4,19 +4,17 @@
 	html5up.net | @ajlkn
 	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
 -->
-<html>
+<html lang="en">
 	<head>
 		<title>DOBRE BRNO - Best Brno Photos - Andrew Marsland - Kentico Cloud</title>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="stylesheet" href="assets/css/main.css" />
 		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
-		<script src="assets/js/vue-2.7.16.min.js"></script>
-		<script src="assets/js/rxjs-6.4.0.umd.min.js"></script>
-		<script src="assets/js/kentico-cloud-delivery-5.7.2.min.js"></script>
 	</head>
 	<body class="is-preload">
 
+		<noscript><p>This gallery requires JavaScript to load its photos and captions.</p></noscript>
 		<!-- Wrapper -->
 			<div id="wrapper">
 
@@ -31,19 +29,19 @@
 					</header>
 
 				<!-- Main -->
-				<image-list :images="this.images"></image-list>
+				<div id="main"><p role="status">Loading photos...</p></div>
 
 				<!-- Footer -->
 					<footer id="footer" class="panel">
 						<div class="inner split">
 							<div>
-								<about-section :data="aboutData"></about-section>
+								<section id="about-content"><p role="status">Loading About content...</p></section>
 								<section>
 									<h2>Follow me on ...</h2>
-									<contact-list :data="contactData"></contact-list>
+									<ul id="contact-links" class="icons"></ul>
 								</section>
 								<p class="copyright">
-									&copy; Untitled. Design: <a href="http://html5up.net">HTML5 UP</a>.
+									&copy; Andrew Marsland. Design: <a href="https://html5up.net">HTML5 UP</a>.
 								</p>
 							</div>
 							<div>

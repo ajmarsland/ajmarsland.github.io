@@ -4,7 +4,7 @@ A photo journal of Brno, Czech Republic, by Andrew Marsland, featuring original 
 
 **[Visit the live gallery](https://ajmarsland.github.io/)**
 
-The site combines a static HTML5 UP gallery with content delivered by Kentico Cloud (now Kontent.ai). Vue renders the photos, captions and About content; jQuery/Poptrox provides the lightbox. GitHub Pages hosts the site.
+The site combines a static HTML5 UP gallery with content delivered by Kentico Cloud (now Kontent.ai). Small browser-native JavaScript modules fetch and render the photos, captions and About content; jQuery/Poptrox provides the lightbox. GitHub Pages hosts the site.
 
 ## Run locally
 
@@ -28,7 +28,7 @@ The delivery project ID is configured in `assets/js/kenticocloud.js`. Treat it a
 4. Preview the proposed branch locally and check the visible behavior below. Changes on a feature branch are not the live website.
 5. Leave questions or feedback on the pull request. Merge only when satisfied: merging to `master` triggers publication to GitHub Pages.
 
-To preview the CMS sanitization proposal before it is merged, use `git fetch origin` and `git switch security/sanitize-cms-html` in your clone, then start the local server.
+To preview a proposed change, fetch its branch and switch to it in your clone before starting the local server. Use the branch named in the pull request.
 
 For the gallery, check that all photos load; open and close a photo; check its caption; open and close **About**; follow the expected links; and inspect a narrow browser window. For CMS sanitization, ordinary formatting and safe links should remain, while scripts, event handlers, dangerous URLs and embedded active content should be removed.
 
@@ -39,7 +39,7 @@ With the local server running:
 | Page | Coverage |
 | --- | --- |
 | `/tests/security.html` | Seven checks for the jQuery security upgrade and panel target handling. |
-| `/tests/cms-sanitization.html` | Twelve checks for unsafe CMS markup, formatting preservation, both actual Vue components, and fail-closed behavior. |
+| `/tests/cms-sanitization.html` | Twenty checks for unsafe CMS markup, rendering, URL validation, LinkedIn, CMS response mapping and failure handling. |
 
 Each page displays PASS/FAIL results. These are manual browser checks, not an automated CI gate. The CMS sanitization tests use local fixtures; the real gallery preview uses the existing CMS.
 
@@ -48,8 +48,8 @@ Each page displays PASS/FAIL results. These are manual browser checks, not an au
 | Path | Purpose |
 | --- | --- |
 | `index.html` | Page structure and script loading. |
-| `assets/js/kenticocloud.js` | CMS delivery client, data loading and application instance. |
-| `assets/js/cms-components.js` | Gallery, About and contact components. |
+| `assets/js/kenticocloud.js` | Native fetch client, CMS response mapping, timeouts and independent section loading. |
+| `assets/js/cms-components.js` | Gallery, About and contact DOM renderers and URL policies. |
 | `assets/js/cms-html.js` | Shared rich-text sanitization policy. |
 | `assets/js/main.js` | Gallery/lightbox and panel behavior. |
 | `assets/css/`, `assets/sass/` | Presentation styles and Sass sources. |
@@ -60,9 +60,9 @@ Each page displays PASS/FAIL results. These are manual browser checks, not an au
 
 CMS captions and About rich text are sanitized at their rendering points using a locally served, pinned DOMPurify build. If sanitization is missing or unsupported, no raw CMS HTML is rendered. See [CMS-SANITIZATION.md](CMS-SANITIZATION.md) for the allowlist, intentional formatting restrictions and test coverage.
 
-See [SECURITY-FIXES.md](SECURITY-FIXES.md) for the earlier dependency and panel fixes. Vue 2, RxJS and the delivery SDK remain legacy dependencies; sanitizing rich text does not replace their eventual upgrade. Photo and social-link URL handling outside rich text is separate from the sanitization policy.
+See [SECURITY-FIXES.md](SECURITY-FIXES.md) for the earlier dependency and panel fixes. Vue 2, RxJS and the old delivery SDK have been removed. The gallery uses the public Delivery REST API directly. Photo URLs must use HTTPS on a Kontent asset host within this environment; social fields must be profile identifiers on fixed service hosts. See [MAINTENANCE.md](MAINTENANCE.md) for the migration, URL policy and verification.
 
-Report sensitive issues through this repository's **Security → Report a vulnerability** option rather than posting exploit details publicly.
+See [SECURITY.md](SECURITY.md) for reporting guidance. Report sensitive issues through this repository's **Security → Report a vulnerability** option rather than posting exploit details publicly.
 
 ## Publishing
 
