@@ -31,4 +31,3 @@ Vue.component('contact-list', {
 		<li v-if="data.linkedin"><a :href="'https://linkedin.com/in/' + data.facebook" class="icon fa-linkedin"><span class="label">LinkedIn</span></a></li>
 	</ul>`
 });
-
